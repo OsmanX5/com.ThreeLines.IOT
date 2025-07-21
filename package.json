@@ -1,0 +1,12 @@
+{
+    "name": "com.threelines.iot",
+    "version": "25.7.17",
+    "displayName": "Three Lines IOT",
+    "description": "Three Lines Package to use IOT devices like arduino and raspberry pi",
+    "unity": "2022.3",
+    "author": {
+        "name": "3LinesTeam",
+        "email": "xr@3lines.com.sa",
+        "url": "https://xr@3lines.com.sa"
+    }
+}
