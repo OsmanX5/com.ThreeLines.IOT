@@ -29,11 +29,16 @@ namespace ThreeLines.IOT.Arduino
             rightButtonResult;
 
         Vector2 lastJoyStickValue;
-        public UnityEvent<Vector2> OnJoystickMovedUnityEvent;
+        public UnityEvent<Vector2> OnJoystickChangedUnityEvent;
 
+        public UnityEvent<Vector2> JoyStickValueEachFrameUnityEvent;
         private void OnEnable()
         {
             AllArduinoInputHandlers.RegisterHandler(this);
+        }
+        private void Update()
+        {
+            JoyStickValueEachFrameUnityEvent?.Invoke(lastJoyStickValue);
         }
         private void OnDisable()
         {
@@ -61,7 +66,7 @@ namespace ThreeLines.IOT.Arduino
             if (joyStickValue != lastJoyStickValue)
             {
                 lastJoyStickValue = joyStickValue;
-                OnJoystickMovedUnityEvent?.Invoke(joyStickValue);
+                OnJoystickChangedUnityEvent?.Invoke(joyStickValue);
             }
         }
         public Vector2 GetJoystickDirection()
