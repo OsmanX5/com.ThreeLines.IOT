@@ -16,5 +16,6 @@ namespace ThreeLines.IOT.Arduino
         /// <param name="pin">The pin number (digital or analog) from which the input originated.</param>
         /// <param name="value">The float value received from the pin (e.g., 0.0 or 1.0 for digital, 0.0-1.0 or 0-1023 normalized for analog).</param>
         void ProcessInput(ArduinoPin pin, float value);
+
     }
 }

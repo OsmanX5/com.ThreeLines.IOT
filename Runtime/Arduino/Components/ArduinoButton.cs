@@ -1,38 +1,16 @@
 // ArduinoButton.cs
 // This Unity component represents a digital button connected to an Arduino pin.
 // It handles input from the Arduino and triggers UnityEvents based on button state changes.
+// Uses ArduinoDigitalButtonLogic for core button processing logic.
 
 using UnityEngine;
 using UnityEngine.Events; // Required for UnityEvent
 using UnityEngine.UI;     // Required for Button component
 using Sirenix.OdinInspector; // Required for Odin Inspector attributes
-using System; // Required for Action (optional, could use UnityEvent directly for value changed)
+using System; // Required for Action
 
 namespace ThreeLines.IOT.Arduino
 {
-    /// <summary>
-    /// Represents the current high-level state of the Arduino button.
-    /// </summary>
-    public enum ButtonState
-    {
-        /// <summary>
-        /// The initial or inactive state of the button.
-        /// </summary>
-        None,
-        /// <summary>
-        /// The button has just been pressed.
-        /// </summary>
-        Pressed,
-        /// <summary>
-        /// The button is being held down.
-        /// </summary>
-        Held,
-        /// <summary>
-        /// The button has just been released.
-        /// </summary>
-        Released
-    }
-
     /// <summary>
     /// Represents a digital button connected to an Arduino pin.
     /// This component listens for input from the specified pin and triggers UnityEvents
@@ -41,6 +19,7 @@ namespace ThreeLines.IOT.Arduino
     /// </summary>
     public class ArduinoButton : MonoBehaviour, IArduinoInputHandler
     {
+        #region Arduino Pin Configuration
         [FoldoutGroup("Arduino Pin Configuration")]
         [Tooltip("The specific Arduino pin this button is connected to.")]
         public ArduinoPin targetPin;
@@ -49,72 +28,84 @@ namespace ThreeLines.IOT.Arduino
         [Tooltip("The pull-up/pull-down method configured for this pin on the Arduino.")]
         public PullMode pullMethod = PullMode.PullUp; // Default to PullUp as it's common for buttons
 
-        [FoldoutGroup("Button State")]
-        [Tooltip("The current normalized value received from the Arduino pin (0.0 to 1.0).")]
-        [SerializeField] // Make it visible in the Inspector for debugging, but not directly editable
-        private float currentValue = 0.0f;
+        [FoldoutGroup("Arduino Pin Configuration")]
+        [Tooltip("Threshold value for determining when the button is considered pressed. Values above this are 'pressed'.")]
+        [Range(0.0f, 1.0f)]
+        public float pressThreshold = 0.5f;
+        #endregion
 
+        #region Button Logic
         [FoldoutGroup("Button State")]
-        [Tooltip("The previous normalized value received from the Arduino pin.")]
+        [Tooltip("The core logic handler for this button.")]
         [SerializeField]
-        private float previousValue = 0.0f;
+        [ReadOnly]
+        private ArduinoDigitalButtonLogic buttonLogic;
+        #endregion
 
-        // Removed rawOnOffState field, as OnOffState enum is being removed.
-        // The raw state will now be determined directly from currentValue.
-
-        [FoldoutGroup("Button State")]
-        [Tooltip("The current high-level state of the button (None, Pressed, Held, Released).")]
-        [SerializeField]
-        [EnumToggleButtons] // Display as toggle buttons
-        [ReadOnly]         // Make it read-only in the Inspector
-        private ButtonState currentButtonState = ButtonState.None;
-
+        #region Unity Events
         [Header("Unity Events")]
-        // Removed OnClick event. OnPressedUnityEvent will now be the primary event for a button press.
-        // Removed OnRelease event. OnReleasedUnityEvent will now be the primary event for a button release.
-
         [Tooltip("Event triggered whenever the raw float value from the pin changes.")]
-        public UnityEvent<float> OnValueChanged; // UnityEvent that passes a float argument
+        public UnityEvent<float> OnValueChanged;
 
         [Tooltip("Event triggered once when the button is initially pressed (transition to Pressed state).")]
         public UnityEvent OnPressedUnityEvent;
 
-        [Tooltip("Event triggered continuously while the button is held down (in Held state).")]
-        public UnityEvent OnHoldUnityEvent;
-
         [Tooltip("Event triggered once when the button is released (transition to Released state).")]
         public UnityEvent OnReleasedUnityEvent;
 
-        public event Action<float> OnValueChangedAction; // Optional Action for value change, can be used instead of UnityEvent
-        public event Action OnPressed; // Optional Action for button press
-        public event Action OnHold;    // Optional Action for button hold
-        public event Action OnReleased; // Optional Action for button release
+        [Tooltip("Event triggered whenever the button state changes.")]
+        public UnityEvent<ButtonState, ButtonState> OnStateChangedUnityEvent;
+        #endregion
 
-
+        #region Unity UI Integration
         [FoldoutGroup("Unity UI Integration")]
         [Tooltip("Enable this to link with a Unity UI Button component.")]
         public bool linkToUnityUIButton = false;
 
         [FoldoutGroup("Unity UI Integration")]
-        [ShowIf("linkToUnityUIButton")] // Only show this field if linkToUnityUIButton is true
+        [ShowIf("linkToUnityUIButton")]
         [Tooltip("Optional: Drag a Unity UI Button component here. Its onClick event will be invoked when the Arduino button is clicked.")]
         public Button uiButtonToLink;
+        #endregion
 
-        public bool IsPressed
-        {
-            get { return currentButtonState == ButtonState.Pressed; }
-        }
+        #region Public Properties
+        /// <summary>
+        /// Returns true if the button is currently in the Pressed state.
+        /// </summary>
+        public bool IsPressed => buttonLogic?.IsPressed ?? false;
+
+        /// <summary>
+        /// Gets the current normalized value of the button pin.
+        /// </summary>
+        public float CurrentValue => buttonLogic?.CurrentValue ?? 0.0f;
+
+        /// <summary>
+        /// Gets the current high-level ButtonState of the button.
+        /// </summary>
+        public ButtonState CurrentButtonState => buttonLogic?.CurrentButtonState ?? ButtonState.None;
+
+        /// <summary>
+        /// Gets the button logic instance for advanced access.
+        /// </summary>
+        public ArduinoDigitalButtonLogic ButtonLogic => buttonLogic;
+        #endregion
+
+        #region Unity Lifecycle
         /// <summary>
         /// Called when the script instance is being loaded.
-        /// Used to initialize UnityEvents to prevent NullReferenceExceptions if no listeners are assigned.
+        /// Initializes the button logic and UnityEvents.
         /// </summary>
         private void Awake()
         {
-            // Removed initialization for OnClick and OnRelease
+            // Initialize button logic
+            buttonLogic = new ArduinoDigitalButtonLogic();
+            buttonLogic.PressThreshold = pressThreshold;
+
+            // Initialize UnityEvents to prevent NullReferenceExceptions
             if (OnValueChanged == null) OnValueChanged = new UnityEvent<float>();
-            if (OnPressedUnityEvent == null) OnPressedUnityEvent = new UnityEvent(); // Initialize new event
-            if (OnHoldUnityEvent == null) OnHoldUnityEvent = new UnityEvent();       // Initialize new event
-            if (OnReleasedUnityEvent == null) OnReleasedUnityEvent = new UnityEvent(); // Initialize new event
+            if (OnPressedUnityEvent == null) OnPressedUnityEvent = new UnityEvent();
+            if (OnReleasedUnityEvent == null) OnReleasedUnityEvent = new UnityEvent();
+            if (OnStateChangedUnityEvent == null) OnStateChangedUnityEvent = new UnityEvent<ButtonState, ButtonState>();
         }
 
         /// <summary>
@@ -125,11 +116,13 @@ namespace ThreeLines.IOT.Arduino
         {
             AllArduinoInputHandlers.RegisterHandler(this);
             Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} enabled and registered.");
-            // Reset button state when enabled
-            currentButtonState = ButtonState.None;
-            // rawOnOffState removed
-            currentValue = 0.0f;
-            previousValue = 0.0f;
+
+            // Reset button logic when enabled
+            if (buttonLogic != null)
+            {
+                var resetResult = buttonLogic.Reset();
+                ProcessButtonResult(resetResult);
+            }
         }
 
         /// <summary>
@@ -143,6 +136,29 @@ namespace ThreeLines.IOT.Arduino
         }
 
         /// <summary>
+        /// Called when the component is destroyed.
+        /// No cleanup needed since we removed event subscriptions.
+        /// </summary>
+        private void OnDestroy()
+        {
+            // No event cleanup needed since ArduinoDigitalButtonLogic no longer has events
+        }
+
+        /// <summary>
+        /// Called every frame to update the press threshold if it changed in the inspector.
+        /// </summary>
+        private void Update()
+        {
+            // Update press threshold if it changed in the inspector
+            if (buttonLogic != null && Math.Abs(buttonLogic.PressThreshold - pressThreshold) > float.Epsilon)
+            {
+                buttonLogic.PressThreshold = pressThreshold;
+            }
+        }
+        #endregion
+
+        #region IArduinoInputHandler Implementation
+        /// <summary>
         /// Processes incoming input data from the Arduino. This method is called by
         /// AllArduinoInputHandlers when data for any pin is received.
         /// </summary>
@@ -150,87 +166,97 @@ namespace ThreeLines.IOT.Arduino
         /// <param name="value">The float value received from the pin, normalized to 0.0-1.0.</param>
         public void ProcessInput(ArduinoPin pin, float value)
         {
-            // Only process input if it's for the target pin of this button.
-            if (pin != targetPin)
+            // Only process input if it's for the target pin of this button
+            if (pin != targetPin || buttonLogic == null)
             {
                 return;
             }
 
-            previousValue = currentValue;
-            currentValue = value;
+            // Delegate processing to the button logic and handle the result
+            var result = buttonLogic.ProcessInput(value);
+            ProcessButtonResult(result);
+        }
+        #endregion
 
-            // Check for value change and invoke OnValueChanged event
-            if (Mathf.Abs(currentValue - previousValue) > float.Epsilon) // Use Epsilon for float comparison
+        #region Event Handlers
+        /// <summary>
+        /// Processes the result from the button logic and triggers appropriate Unity events.
+        /// </summary>
+        /// <param name="result">The result from processing button input.</param>
+        private void ProcessButtonResult(ButtonProcessResult result)
+        {
+            // Handle value change
+            if (result.ValueChanged)
             {
-                OnValueChanged?.Invoke(currentValue); // Null check added
+                OnValueChanged?.Invoke(result.CurrentValue);
             }
 
-            // Determine the new raw binary state based on the normalized value.
-            // Assuming 0.5 as a threshold for simplicity. For digital, it will be 0 or 1.
-            bool newIsOn = (currentValue > 0.5f);
-            bool wasOn = (previousValue > 0.5f); // Determine previous binary state based on previousValue
-
-            // State machine for ButtonState
-            if (newIsOn && !wasOn) // Button just pressed (transition from Off to On)
+            // Handle state change
+            if (result.StateChanged)
             {
-                currentButtonState = ButtonState.Pressed;
-                OnPressedUnityEvent?.Invoke(); // Null check added
-                OnPressed?.Invoke(); // Optional Action for button press
-                Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} pressed (state: {currentButtonState})!");
+                OnStateChangedUnityEvent?.Invoke(result.PreviousState, result.CurrentState);
+                Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin}: {buttonLogic}");
+            }
+
+            // Handle press event
+            if (result.WasPressed)
+            {
+                OnPressedUnityEvent?.Invoke();
+                Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} pressed!");
 
                 // If linked, invoke the Unity UI Button's onClick event
                 if (linkToUnityUIButton && uiButtonToLink != null)
                 {
-                    uiButtonToLink.onClick?.Invoke(); // Null check added for onClick
+                    uiButtonToLink.onClick?.Invoke();
                     Debug.Log($"[ThreeLines.IOT.Arduino] Linked UI Button's onClick invoked for pin {targetPin}.");
                 }
             }
-            else if (!newIsOn && wasOn) // Button just released (transition from On to Off)
-            {
-                currentButtonState = ButtonState.Released;
-                OnReleasedUnityEvent?.Invoke(); // Null check added
-                OnReleased?.Invoke(); // Optional Action for button release
-                Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} released (state: {currentButtonState})!");
-            }
-            else if (newIsOn && wasOn) // Button remains On (either Pressed or Held)
-            {
-                if (currentButtonState == ButtonState.Pressed)
-                {
-                    // If the button was just pressed and remains on, transition to Held
-                    currentButtonState = ButtonState.Held;
-                    Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} transitioned to held (state: {currentButtonState})!");
-                }
-                if (currentButtonState == ButtonState.Held)
-                {
-                    // If the button is held, continuously invoke OnHoldUnityEvent
-                    OnHoldUnityEvent?.Invoke(); // Null check added
-                    OnHold?.Invoke(); // Optional Action for button hold
 
-                    // Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} held (state: {currentButtonState})!"); // Log less frequently for hold
-                }
-            }
-            else // !newIsOn && !wasOn (Button remains Off)
+            // Handle release event
+            if (result.WasReleased)
             {
-                currentButtonState = ButtonState.None; // Or keep as Released if it was just released and no new press
+                OnReleasedUnityEvent?.Invoke();
+                Debug.Log($"[ThreeLines.IOT.Arduino] ArduinoButton on pin {targetPin} released!");
+            }
+        }
+        #endregion
+
+        #region Public Methods
+        /// <summary>
+        /// Simulates a button press programmatically.
+        /// </summary>
+        public void SimulatePress()
+        {
+            if (buttonLogic != null)
+            {
+                var result = buttonLogic.SimulatePress();
+                ProcessButtonResult(result);
             }
         }
 
         /// <summary>
-        /// Gets the current normalized value of the button pin.
+        /// Simulates a button release programmatically.
         /// </summary>
-        /// <returns>The current value (0.0 to 1.0).</returns>
-        public float GetCurrentValue()
+        public void SimulateRelease()
         {
-            return currentValue;
+            if (buttonLogic != null)
+            {
+                var result = buttonLogic.SimulateRelease();
+                ProcessButtonResult(result);
+            }
         }
 
         /// <summary>
-        /// Gets the current high-level ButtonState of the button.
+        /// Resets the button to its initial state.
         /// </summary>
-        /// <returns>The current ButtonState (None, Pressed, Held, Released).</returns>
-        public ButtonState GetCurrentButtonState()
+        public void ResetButton()
         {
-            return currentButtonState;
+            if (buttonLogic != null)
+            {
+                var result = buttonLogic.Reset();
+                ProcessButtonResult(result);
+            }
         }
+        #endregion
     }
 }

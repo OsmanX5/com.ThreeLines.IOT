@@ -1,0 +1,7 @@
+.PinHolder {
+    flex-grow: 0;
+    width: 60px;
+    height: 80px;
+    flex-direction: column;
+    align-self: center;
+}

@@ -1,0 +1,22 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" xsi="http://www.w3.org/2001/XMLSchema-instance" engine="UnityEngine.UIElements" editor="UnityEditor.UIElements" noNamespaceSchemaLocation="../../../UIElementsSchema/UIElements.xsd" editor-extension-mode="True">
+    <Style src="project://database/Assets/com.ThreeLines.IOT/Resources/ThreeLinesIOT/Editor/ThreeLinesIOTUSS.uss?fileID=7433441132597879392&amp;guid=3daa1354486da34428396005742d03c8&amp;type=3#ThreeLinesIOTUSS" />
+    <ui:VisualElement name="PinsHolder" style="flex-grow: 0;">
+        <ui:VisualElement name="upPin" class="PinHolder">
+            <ui:VisualElement style="width: 60px; height: 60px; background-color: rgb(233, 233, 233); border-left-color: rgba(0, 0, 0, 0.36); border-right-color: rgba(0, 0, 0, 0.36); border-top-color: rgba(0, 0, 0, 0.36); border-bottom-color: rgba(0, 0, 0, 0.36); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;" />
+        </ui:VisualElement>
+        <ui:VisualElement name="Row2" style="flex-grow: 1; flex-direction: row; justify-content: center;">
+            <ui:VisualElement name="leftPin" class="PinHolder">
+                <ui:VisualElement style="width: 60px; height: 60px; background-color: rgb(233, 233, 233); border-left-color: rgba(0, 0, 0, 0.36); border-right-color: rgba(0, 0, 0, 0.36); border-top-color: rgba(0, 0, 0, 0.36); border-bottom-color: rgba(0, 0, 0, 0.36); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;" />
+            </ui:VisualElement>
+            <ui:VisualElement style="flex-grow: 0; width: 80px;">
+                <ui:VisualElement name="Icon" style="flex-grow: 0; background-image: resource(&apos;ThreeLinesIOT/Icons/joystick&apos;); width: 60px; height: 60px; align-self: center;" />
+            </ui:VisualElement>
+            <ui:VisualElement name="rightPin" class="PinHolder">
+                <ui:VisualElement style="width: 60px; height: 60px; background-color: rgb(233, 233, 233); border-left-color: rgba(0, 0, 0, 0.36); border-right-color: rgba(0, 0, 0, 0.36); border-top-color: rgba(0, 0, 0, 0.36); border-bottom-color: rgba(0, 0, 0, 0.36); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;" />
+            </ui:VisualElement>
+        </ui:VisualElement>
+        <ui:VisualElement name="downPin" class="PinHolder">
+            <ui:VisualElement style="width: 60px; height: 60px; background-color: rgb(233, 233, 233); border-left-color: rgba(0, 0, 0, 0.36); border-right-color: rgba(0, 0, 0, 0.36); border-top-color: rgba(0, 0, 0, 0.36); border-bottom-color: rgba(0, 0, 0, 0.36); border-top-left-radius: 5px; border-top-right-radius: 5px; border-bottom-right-radius: 5px; border-bottom-left-radius: 5px; border-top-width: 1px; border-right-width: 1px; border-bottom-width: 1px; border-left-width: 1px;" />
+        </ui:VisualElement>
+    </ui:VisualElement>
+</ui:UXML>

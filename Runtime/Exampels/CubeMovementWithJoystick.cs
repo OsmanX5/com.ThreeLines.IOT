@@ -23,7 +23,8 @@ public class CubeMovementWithJoystick : MonoBehaviour
     ArduinoButton joyStickRight;//4
     [SerializeField]
     ArduinoButton jumpButton; // Add your jump button here
-
+    [SerializeField]
+    Arduino4ButtonsJoystick joyStick;
     [ShowInInspector]
     [ReadOnly]
     Vector3 movement;
@@ -51,10 +52,11 @@ public class CubeMovementWithJoystick : MonoBehaviour
     void Update()
     {
         // Handle horizontal movement
+        var joystickValue = joyStick.GetJoystickDirection();
         movement = new(
-            joyStickLeft.IsPressed ? -1 : joyStickRight.IsPressed ? 1 : 0,
+            joystickValue.x,
             0,
-            joyStickDown.IsPressed ? -1 : joyStickUp.IsPressed ? 1 : 0);
+            joystickValue.y);
 
         // Apply horizontal movement
         transform.Translate(movement * Time.deltaTime * speed, Space.World);
