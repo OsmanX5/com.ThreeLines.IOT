@@ -50,6 +50,7 @@ namespace ThreeLines.IOT.Arduino
         [Tooltip("Event triggered once when the button is initially pressed (transition to Pressed state).")]
         public UnityEvent OnPressedUnityEvent;
 
+        public UnityEvent PressedValueEachFrameUnityEvent;
         [Tooltip("Event triggered once when the button is released (transition to Released state).")]
         public UnityEvent OnReleasedUnityEvent;
 
@@ -153,6 +154,10 @@ namespace ThreeLines.IOT.Arduino
             if (buttonLogic != null && Math.Abs(buttonLogic.PressThreshold - pressThreshold) > float.Epsilon)
             {
                 buttonLogic.PressThreshold = pressThreshold;
+            }
+            if(IsPressed)
+            {
+                PressedValueEachFrameUnityEvent?.Invoke();
             }
         }
         #endregion
