@@ -1,6 +1,6 @@
 {
     "name": "com.threelines.iot",
-    "version": "25.7.17",
+    "version": "25.10.05",
     "displayName": "Three Lines IOT",
     "description": "Three Lines Package to use IOT devices like arduino and raspberry pi",
     "unity": "2022.3",
